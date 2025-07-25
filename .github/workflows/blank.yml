@@ -1,0 +1,43 @@
+!pip install --upgrade openai
+ # -> 커널재시작.
+print(openai.__version__)
+ # 1.60.1 <- 25.1.27 기준최신버전
+!pip install pypdf
+ # 단계 1: 문서 로드(Load Documents)
+from langchain_community.document_loaders import PyPDFLoader
+data_loader = PyPDFLoader("./data/2차 - 1_초급 (22차시 부분).pdf") <- 실제로 과
+docs = data_loader.load()
+print(len(docs))
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overl
+split_documents = text_splitter.split_documents(docs)
+print(f"분할된 청크의수: {len(split_documents)}")
+from langchain_openai import OpenAIEmbeddings
+ embeddings = OpenAIEmbeddings()
+  !pip install faiss-cpu
+ from langchain_community.vectorstores import FAISS
+ vectorstore = FAISS.from_documents(documents=split_documents, embedding=e
+ retriever = vectorstore.as_retriever(search_kwargs={"k": 2})
+ from langchain.chat_models import ChatOpenAI
+ from langchain.schema import AIMessage, HumanMessage
+ import openai
+ import gradio as gr
+ model_name = 파인튜닝모델. 단, 파인튜닝이 어려운 경우 gpt-3.5-turbo 모델로 실습 가능
+llm = ChatOpenAI(temperature=1.0, model=model_name)
+ def predict(message, history):
+    history_langchain_format = []
+    for human, ai in history:
+        history_langchain_format.append(HumanMessage(content=human))
+        history_langchain_format.append(AIMessage(content=ai))
+    history_langchain_format.append(HumanMessage(content=message))
+ ####################################
+    relevant_docs = retriever.invoke(message)
+    ref_text = "\n\n".join([doc.page_content for doc in relevant_docs])
+    template = f"""
+    user query : {message}
+    ref doc : {ref_text}
+    """
+    gpt_response = llm.invoke(template)
+    ####################################
+    return gpt_response.content
+ gr.ChatInterface(predict).launch()
