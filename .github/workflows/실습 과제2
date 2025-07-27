@@ -1,0 +1,41 @@
+import warnings
+warnings.filterwarnings("ignore")
+
+
+!pip install gradio
+!pip install langchain langchain_community
+!pip install -qU langchain-openai
+
+from google.colab import userdata
+import os
+
+os.environ["OPENAI_API_KEY"] = userdata.get('OPENAI_API_KEY')
+api_key = os.getenv("OPENAI_API_KEY")
+
+import json
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, AIMessage
+import gradio as gr
+from datetime import datetime
+
+# Initialize the chat model
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+import json
+
+def save_history(history):
+    with open('chat_history.json', 'w', encoding='utf-8') as f:
+        json.dump(history, f, ensure_ascii=False, indent=4)
+
+def predict(message, history):
+    history_langchain_format = []
+    for human, ai in history:
+        history_langchain_format.append(HumanMessage(content=human))
+        history_langchain_format.append(AIMessage(content=ai))
+    history_langchain_format.append(HumanMessage(content=message))
+    gpt_response = llm(history_langchain_format)
+    history.append((message, gpt_response.content))
+    save_history(history)
+    return gpt_response.content
+
+gr.ChatInterface(predict).launch(share=True)
