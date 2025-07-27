@@ -1,7 +1,6 @@
 import warnings
 warnings.filterwarnings("ignore")
 
-
 !pip install openai  # ==0.28
 !pip install gradio
 !pip install langchain langchain_community
